@@ -145,7 +145,7 @@ object UserBasedCF {
     // Generate a hash map for users average and mod of its vector and store if we need to calculate its weight with other similar users
     val user_avg_mod_hash: Map[String, (Double, Double, Boolean)] = HashMap()
     for(user: (String, (Double, Double, Int)) <- user_average_mod) {
-      user_avg_mod_hash(user._1) = (user._2._1 / user._2._3, math.sqrt(user._2._2), user._2._3 > 5)
+      user_avg_mod_hash(user._1) = (user._2._1 / user._2._3, math.sqrt(user._2._2), user._2._3 > 20)
     }
 
     // Calculate the average of the item ratings
@@ -185,7 +185,7 @@ object UserBasedCF {
     // Filter out the users have rated more than 5 items and have at least co-rated 1 items with active user
     val final_user_list: ArrayBuffer[String] = ArrayBuffer()
     for(pot_users <- users) {
-      if(user_avg_mod_hash(pot_users)._3 && rated_items.intersect(user_item_hash(pot_users).keySet).size > 1) {
+      if(user_avg_mod_hash(pot_users)._3 && rated_items.intersect(user_item_hash(pot_users).keySet).size > 12) {
         final_user_list += pot_users
       }
     }
@@ -221,7 +221,7 @@ object UserBasedCF {
 
     // Calculate the rating difference for a user for all of his rated items and collect them
     for(user: String <- similarity_hash.keySet) {
-      if(similarity_hash(user) > 0.2) {
+      if(similarity_hash(user) > 0.5) {
         val co_items = rated_items.intersect(user_item_hash(user).keySet)
         co_rated_items(user) = co_items
         var active_u_avg, other_u_avg = 0.0
@@ -269,7 +269,7 @@ object UserBasedCF {
         numerator += (user_item_hash(user)(item) - co_avg) * weights(user)
         denominator += math.abs(weights(user))
       }
-      return user_avg + (numerator/denominator)
+      return (user_avg + (numerator/denominator)) * (math.log(user_item_hash.size) - math.log(item_avg_hash(item)._1.size))
     } else {
       return (user_avg + item_avg_hash(item)._2)/2
     }
